@@ -48,6 +48,6 @@
        domain_name: hooless.com,
        wan_dns_1: 114.114.114.114,
        wan_dns_2: 119.29.29.29,
-       lan_dns_1: 172.28.247.180,
-       lan_dns_2: 172.28.247.181
+       lan_dns_1: 172.16.1.1,
+       lan_dns_2: 172.16.1.2
        }
