@@ -1,0 +1,51 @@
+options {
+        listen-on port 53 { {{ ansible_eth0.ipv4.address }}; };
+        directory       "/var/named";
+        dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+
+        forwarders      { {{ wan_dns_1 }}; {{ wan_dns_2 }}; };
+        forward         only;
+
+        max-ncache-ttl  3;
+
+        allow-transfer  { none; };
+        allow-update-forwarding { none; };
+        allow-notify    { none; };
+        allow-query     { any; };
+};
+
+logging {
+        channel default_debug {
+                file "data/named.run" versions 3 size 50m;
+                severity info;
+                print-severity yes;
+                print-category yes;
+                print-time yes;
+        };
+
+        channel query {
+                file "data/named.log" versions 5 size 100m;
+                severity info;
+                print-severity yes;
+                print-category yes;
+                print-time yes;
+        };
+
+        category queries { query; };
+        category default { default_debug; };
+};
+
+zone "service.{{ domain_name }}" IN {
+        type forward;
+
+        forwarders { {{ lan_dns_1 }}; {{ lan_dns_2 }}; };
+        forward only;
+};
+zone "internal.api.{{ domain_name }}" IN {
+        type forward;
+
+        forwarders { {{ lan_dns_1 }}; {{ lan_dns_2 }}; };
+        forward only;
+};

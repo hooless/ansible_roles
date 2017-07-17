@@ -1,0 +1,62 @@
+ key "rndc-key" {
+ 	algorithm hmac-md5;
+ 	secret "cZiIVBD3CDNPFB+Bl2s50Q==";
+ };
+
+ controls {
+ 	inet 127.0.0.1 port 953
+ 		allow { 127.0.0.1; } keys { "rndc-key"; };
+ };
+
+options {
+        listen-on port 53 { {{ listen_ip }}; };
+        directory       "/data/named";
+        dump-file       "/data/named/data/cache_dump.db";
+        statistics-file "/data/named/data/named_stats.txt";
+        memstatistics-file "/data/named/data/named_mem_stats.txt";
+        max-ncache-ttl  3;
+        allow-transfer  { none; };
+        allow-update-forwarding { none; };
+        allow-notify    { none; };
+        allow-query     { any; };
+};
+
+logging {
+        channel default_debug {
+                file "data/named.run" versions 3 size 50m;
+                severity info;
+                print-severity yes;
+                print-category yes;
+                print-time yes;
+        };
+
+        channel query {
+                file "data/named.log" versions 5 size 100m;
+                severity info;
+                print-severity yes;
+                print-category yes;
+                print-time yes;
+        };
+
+
+        category queries { query; };
+        category default { default_debug; };
+};
+
+acl "{{ acl_name }}" {
+      {{ acl_net }};
+};
+
+
+view "{{ view_name }}" {
+       match-clients { {{ acl_name }};};
+       dlz "Mysql zone" {
+       database "mysql
+       {host={{ listen_ip }} dbname=dns ssl=false user={{ dns_user[0].name }} pass={{ dns_user[0].pass }} }
+       {select zone from {{ domain_table }} where zone='$zone$'}
+       {select ttl, type, mx_priority, case when lower(type)='txt' then concat('\"', data, '\"')
+           when lower(type) = 'soa' then concat_ws(' ', data, resp_person, serial, refresh, retry, expire, minimum)
+           else data end from ucloud_cn where zone = '$zone$' and host = '$record$' and view = '{{ acl_name }}'}";
+
+};
+};

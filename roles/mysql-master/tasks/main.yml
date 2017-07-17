@@ -1,0 +1,40 @@
+---
+# tasks file for mysql-master
+- name: Install MariaDB package
+  yum: name={{ item }} state=installed
+  with_items:
+    - mysql-server
+    - mysql
+    - mysql++-devel.x86_64
+    - MySQL-python
+
+- name: Create MariaDB log file
+  file: path=/var/log/mysqld.log state=touch owner=mysql group=mysql mode=0755
+
+- name: Create MariaDB PID directory
+  file: path=/var/run/mysqld state=directory owner=mysql group=mysql mode=0755
+
+- name: Creat my.cnf.d directory 
+  file: path=/etc/my.cnf.d state=directory mode=0755
+
+#- name: Start mariadb
+#  service: name=mariadb state=started enabled=yes
+#  when: ansible_distribution_major_version == "7"
+
+- name: Start mariadb
+  service: name=mysqld state=started enabled=yes
+  when: ansible_distribution_major_version == "6"
+
+# 配置文件 
+- name: Create mysql configure file
+  template: src=server.cnf.j2 dest=/etc/my.cnf.d/server.cnf
+  notify:
+    - restart mariadb
+
+
+# 配置主从复制账号
+- name: Create Replication User
+  mysql_user: name={{ mysql_repl_user[0].name  }} password={{ mysql_repl_user[0].pass }}  priv=*.*:ALL host={{ item }} state=present
+  with_items:
+    - '%'
+    - 'localhost'

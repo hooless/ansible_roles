@@ -1,0 +1,19 @@
+---
+- name: install the latest version of bind
+  yum: name={{ item }} state=installed 
+  with_items:
+    - bind
+    - bind-utils
+
+
+- name: Create /etc/named.conf
+  template: src=named.conf.j2 dest=/etc/named.conf
+  notify: restart_bind
+
+- name: dig test.service.{{ domain_name }}
+  shell: dig  @{{  ansible_eth0.ipv4.address }}    test.service.{{domain_name}}
+  register: dig
+
+- debug: var=dig.stdout_lines
+
+

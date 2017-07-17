@@ -1,0 +1,14 @@
+[mysql-master]
+172.16.1.1
+[mysql-slave]
+172.16.1.2
+
+[dns-master]
+172.16.1.1
+[dns-slave]
+172.16.1.2
+
+[dns-cache]
+172.16.1.3
+172.16.1.4
+

@@ -1,0 +1,52 @@
+---
+- name: Download bind-9.9.9-p2.tar.gz
+  get_url:
+    url: http://192.168.168.106:9999/bind-9.9.9-p2.tar.gz
+    dest: /opt/bind-9.9.9-p2.tar.gz
+
+- name: unarchive /opt/bind-9.9.9-p2.tar.gz
+  unarchive:
+    src: /opt/bind-9.9.9-p2.tar.gz
+    dest: /usr/local/
+    copy: no
+
+- name: Create /usr/local/bind/etc/named.conf
+  template: src=named.conf.j2 dest=/usr/local/bind/etc/named.conf
+
+- name: Create /usr/local/bind/create_dns_table.sql
+  template: src=create_dns_table.sql.j2 dest=/usr/local/bind/create_dns_table.sql
+
+- name: Creat /data/named/data directory 
+  file: path=/data/named/data  state=directory mode=0755
+
+
+# 配置
+- name: Create User for bind
+  mysql_user: name={{ dns_user[0].name  }} password={{ dns_user[0].pass }}  priv=*.*:ALL host={{ item }} state=present
+  with_items:
+    - '%'
+    - 'localhost'
+  when: dns_role == 'master'
+
+- name: Create  dns  database 
+  mysql_db: name={{ item }} state=present
+  with_items: 
+    - dns
+  when: dns_role == 'master'
+
+- name: Run SQL commands create table in dns database 
+  mysql_db:
+    name: dns
+    state: import
+    target: /usr/local/bind/create_dns_table.sql
+  when: dns_role == 'master'
+
+- name: start  /usr/local/bind/sbin/named 
+  shell: /usr/local/bind/sbin/named -uroot -c /usr/local/bind/etc/named.conf
+
+- name: dig test.service.{{ domain_name }}
+  shell: /usr/local/bind/bin/dig  @{{ listen_ip }}    test.service.{{ domain_name }}
+  register: dig 
+
+- debug: var=dig.stdout_lines
+

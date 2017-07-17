@@ -1,0 +1,53 @@
+- name: Install mysql-master and configure mysqlmaster
+  hosts: mysql-master
+  tags: mysql-master
+
+  roles:
+    - {role: mysql-master
+       mysql_repl_user: [{name: mysqlmaster, pass: 123456}]
+      }
+
+- name: Install mysql-slave and configure mysql replication
+  hosts: mysql-slave
+  roles:
+    - {role: mysql-slave,
+       mysql_master: 172.16.1.1,
+       mysql_repl_user: [{name: mysqlmaster, pass: 123456}]
+      }
+
+- hosts: dns-master
+  roles:
+    - {role: bind-p2,
+       dns_role: master,
+       dns_user: [{ name: dns, pass: dnspass }],
+       listen_ip: 172.16.1.1,
+       acl_name: test,
+       acl_net: 172.16.0.0/16,
+       view_name: test_view,
+       domain_name: hooless.com,
+       domain_table: hooless_com
+       }
+
+- hosts: dns-slave
+  gather_facts: False
+  roles:
+    - {role: bind-p2,
+       dns_role: slave,
+       dns_user: [{ name: dns, pass: dnspass }],
+       listen_ip: 172.16.1.2,
+       acl_name: test,
+       acl_net: 172.16.0.0/16,
+       view_name: test_view 
+       domain_name: hooless.com,
+       domain_table: hooless_com
+       }
+
+- hosts: dns-cache
+  roles:
+    - {role: bind-cache,
+       domain_name: hooless.com,
+       wan_dns_1: 114.114.114.114,
+       wan_dns_2: 119.29.29.29,
+       lan_dns_1: 172.28.247.180,
+       lan_dns_2: 172.28.247.181
+       }

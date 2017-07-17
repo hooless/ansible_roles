@@ -1,0 +1,4 @@
+---
+# handlers file for bind
+- name: restart_bind
+  service: name=named state=restarted enabled=yes
