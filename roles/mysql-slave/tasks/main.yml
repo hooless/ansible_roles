@@ -20,14 +20,14 @@
 # 配置文件 
 - name: Create mysql configure file
   template: src=server.cnf.j2 dest=/etc/my.cnf.d/server.cnf
-  notify:
-    - restart mariadb
 
 # 将 server.conf 添加到主配置
 - name: /etc/my.cnf include  /etc/my.cnf.d/
   lineinfile:
     dest=/etc/my.cnf
     line='!includedir /etc/my.cnf.d'
+  notify:
+    - restart mariadb
 
 #- name: Start mariadb
 #  service: name=mariadb state=started enabled=yes
